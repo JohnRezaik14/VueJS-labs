@@ -4,6 +4,173 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Books Store</title>
+
+    <link href="./books.output.css" rel="stylesheet" />
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script> -->
+    <script src="./vueversion3.js"></script>
+    <script src="./books.js"></script>
   </head>
-  <body></body>
+  <body>
+    <div id="app" class="bg-gray-800 min-h-screen w-full text-gray-100">
+      <nav
+        class="w-full h-fit min-h-16 bg-gray-600 text-gray-200 text-2xl font-semibold flex items-center"
+      >
+        <div class="w-full flex justify-around items-center">
+          <button
+            @click="currentView='home'"
+            class="cursor-pointer hover:text-teal-400 transition-colors duration-200"
+            :class="{'text-teal-500' : currentView==='home'}"
+          >
+            Home
+          </button>
+          <button
+            @click="currentView='list'"
+            class="cursor-pointer hover:text-teal-400 transition-colors duration-200 flex items-center gap-2"
+            :class="{'text-teal-500' : currentView==='list'}"
+          >
+            Your List
+            <span
+              v-if="userList.length > 0"
+              class="bg-cyan-600 text-white rounded-full px-2 py-1 text-sm font-sans"
+            >
+              {{ userList.length }}
+            </span>
+          </button>
+        </div>
+      </nav>
+      <main>
+        <div
+          v-if=" currentView==='home' "
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6 px-3"
+        >
+          <div
+            v-for="book in books"
+            :title="book.name"
+            class="bg-gray-300 text-gray-900 rounded p-2"
+          >
+            <img
+              :src="book.image"
+              :alt="book.name"
+              class="w-full h-80 object-cover rounded-md"
+            />
+            <div class="flex justify-around gap-1 p-2 text-lg">
+              <div class="flex flex-col gap-2">
+                <p>category: {{book.category}}</p>
+                <p>Pages: {{book.numberofpage}}</p>
+                <p>ISBN: {{book.ISBN}}</p>
+              </div>
+              <div class="flex flex-col gap-2">
+                <p>Author: {{book.author}}</p>
+                <p>Price: {{formatPrice(book.price)}}</p>
+                <div v-if="isInList(book.ISBN)" class="text-cyan-950 font-bold">
+                  Added
+                </div>
+                <div v-else>
+                  <button
+                    @click="addTolist(book)"
+                    class="bg-cyan-950 text-gray-100 text-md cursor-pointer p-1.5 rounded-md transition-colors duration-200 hover:bg-cyan-800"
+                  >
+                    Add to List
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- --------------List View ---------------------------------------- -->
+
+        <div v-if="currentView==='list' ">
+          <div
+            v-if="userList.length==0"
+            class="w-full p-8 flex flex-col justify-center items-center text-2xl gap-8"
+          >
+            <p>Your List is empty now</p>
+            <button
+              @click="currentView='home'"
+              class="cursor-pointer hover:text-cyan-700 duration-200 transition-colors underline"
+            >
+              Want to add a book ?
+            </button>
+          </div>
+          <div v-else class="w-full p-6">
+            <table
+              class="w-full border-collapse bg-gray-700 rounded-lg overflow-hidden"
+            >
+              <thead>
+                <tr class="bg-gray-600">
+                  <th class="p-4">Image</th>
+                  <th class="p-4">ISBN</th>
+                  <th class="p-4">Category</th>
+                  <th class="p-4">Name</th>
+                  <th class="p-4">Author</th>
+                  <th class="p-4">Description</th>
+                  <th class="p-4">Pages</th>
+                  <th class="p-4">Price</th>
+                  <th class="p-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="book in userList"
+                  class="border-t border-gray-600 hover:bg-gray-600 transition-colors duration-200"
+                >
+                  <td class="p-4">
+                    <img
+                      :src="book.image"
+                      :alt="book.name"
+                      class="h-24 w-20 object-cover rounded-md"
+                    />
+                  </td>
+                  <td class="p-4">{{book.ISBN}}</td>
+                  <td class="p-4">{{book.category}}</td>
+                  <td class="p-4 font-medium">{{book.name}}</td>
+                  <td class="p-4">{{book.author}}</td>
+                  <td class="p-4 max-w-xs truncate">{{book.description}}</td>
+                  <td class="p-4 text-center">{{book.numberofpage}}</td>
+                  <td class="p-4">{{formatPrice(book.price)}}</td>
+                  <td class="p-4">
+                    <button
+                      @click="removeFromList(book.ISBN)"
+                      class="cursor-pointer bg-red-800 hover:bg-red-700 px-3 py-1 rounded-md transition-colors duration-200"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          books: books,
+          userList: [],
+          currentView: "home",
+        };
+      },
+      methods: {
+        addTolist(book) {
+          this.userList.push(book);
+        },
+        removeFromList(isbn) {
+          this.userList = this.userList.filter((book) => book.ISBN != isbn);
+        },
+        isInList(isbn) {
+          return this.userList.some((book) => book.ISBN == isbn);
+        },
+        formatPrice(price, currency = "SAR", locale = "en-US") {
+          return new Intl.NumberFormat(locale, {
+            style: "currency",
+            currency: currency,
+          }).format(price);
+        },
+      },
+    }).mount("#app");
+  </script>
 </html>
